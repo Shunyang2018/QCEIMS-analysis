@@ -6,11 +6,6 @@ Created on Fri Dec  6 11:55:50 2019
 @author: shunyang
 """
 
-import numpy as np
-#import tarfile
-import re
-import os
-import matplotlib.pyplot as plt
 import pandas as pd
 
 '''
@@ -31,6 +26,7 @@ class qceimsout():
         self.trajectory2 = []
         self.exit = []
         self.content = []
+        self.time = []
 #        self.calls = []
         with open(path) as f:
             for block in self.readblocks(f):
@@ -65,6 +61,7 @@ class qceimsout():
             if ('E X I T' in block[i])|('EXIT' in block[i]):
                 self.exit.append(block[i])
                 self.content.append(block[i-2])
+                self.time.append(block[i-2].split()[1])
 #                flag = not flag
 #        if not flag:
 #            self.re = block
@@ -77,7 +74,8 @@ class qceimsout():
                 
     def excel(self):
         data = {'index1': self.trajectory1, 'index2': self.trajectory2, 
-                               'reason': self.exit, 'step   time [fs]    Epot       Ekin       Etot    error  #F   eTemp   frag. T': self.content}
+                               'reason': self.exit, 'time': self.time,
+                               'step   time [fs]    Epot       Ekin       Etot    error  #F   eTemp   frag. T': self.content}
         
         self.pd = pd.DataFrame(data)
         self.pd.to_csv(path.split('.')[0]+'.csv')
