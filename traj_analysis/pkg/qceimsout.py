@@ -7,13 +7,22 @@ Created on Fri Dec  6 11:55:50 2019
 """
 
 import pandas as pd
+import argparse
 
 '''
 To use the code, change the path of qceims.out file, 
 the program will generate a qceims.csv file at the same path
 '''
 
-path = '/Users/shunyang/project/qceims_input/184/qceims.out'
+file = '/Users/shunyang/project/qceims_input/184/qceims.out'
+
+parser = argparse.ArgumentParser(prog='shunyang',
+                                 description='Progdyn main program.')
+parser.add_argument("-f",'--file',dest='file', action='store',
+                    help='full path of the qceims.out file')
+parser.add_argument("-b",'--batch',dest='path',action='store',
+                    help='path of folder which contains all result file, example: /tmp/184/qceims.out, than path = /tmp/')
+args = parser.parse_args(['-f',file])
 
 class qceimsout():
     def __init__(self,path):
@@ -27,6 +36,15 @@ class qceimsout():
         self.exit = []
         self.content = []
         self.time = []
+        self.step = []
+        self.Epot = []
+        self.Ekin = []
+        self.Etot = []
+        self.error = []
+        self.numfrag = []
+        self.eTemp = []
+        self.fragT = []
+        self.fraginfo = [] #only take the largest charge fragment
 #        self.calls = []
         with open(path) as f:
             for block in self.readblocks(f):
@@ -50,7 +68,7 @@ class qceimsout():
 
 
     def process(self, block):
-
+        frag = []
 #        flag= False
         for i in range(len(block)):
             if 'trajectory' in block[i]:
@@ -61,7 +79,19 @@ class qceimsout():
             if ('E X I T' in block[i])|('EXIT' in block[i]):
                 self.exit.append(block[i])
                 self.content.append(block[i-2])
-                self.time.append(block[i-2].split()[1])
+                tmp2 = block[i-2].split()
+                self.time.append(tmp2[1])
+                self.step.append(tmp2[0])
+                self.Epot.append(tmp2[2])
+                self.Ekin.append(tmp2[3])
+                self.Etot.append(tmp2[4])
+                self.error.append(tmp2[5])
+                self.numfrag.append(tmp2[6])
+                self.eTemp.append(tmp2[7])
+                self.fragT.append(tmp2[8:])
+            if 'M=' in block[i]:
+                
+                frag.append(block[i])
 #                flag = not flag
 #        if not flag:
 #            self.re = block
@@ -75,16 +105,17 @@ class qceimsout():
     def excel(self):
         data = {'index1': self.trajectory1, 'index2': self.trajectory2, 
                                'reason': self.exit, 'time': self.time,
-                               'step   time [fs]    Epot       Ekin       Etot    error  #F   eTemp   frag. T': self.content}
+                               'step':self.step, 'Epot':self.Epot, 'Ekin':self.Ekin,
+                               'error':self.error, 'numfrag':self.numfrag, 'eTemp':self.eTemp, 'fragT':self.fragT}
         
         self.pd = pd.DataFrame(data)
-        self.pd.to_csv(path.split('.')[0]+'.csv')
+        self.pd.to_csv(self.path.split('.')[0]+'.csv')
         return self.pd
                     
             
 
 
-y = qceimsout(path)
+y = qceimsout(args.file)
 print(len(y.trajectory1),len(y.trajectory2),len(y.exit),len(y.content))
 
 y.excel()
