@@ -58,8 +58,9 @@ class qceimsout():
         self.eTemp = []
         self.fragT = []
         self.fraginfo = [] #only take the largest charge fragment
-        
+        self.frag = []
         self.file(path)
+        
 #        else:
 #            self.batch(path)
 #        self.calls = []
@@ -68,6 +69,7 @@ class qceimsout():
             for block in self.readblocks(f):
                 self.block = block
                 self.process(block)
+                
                 
         f.close()
 
@@ -90,10 +92,21 @@ class qceimsout():
         frag = []
 #        flag= False
         for i in range(len(block)):
+             
             if 'trajectory' in block[i]:
                 tmp = block[i].split()
                 self.trajectory1.append(tmp[1])
                 self.trajectory2.append(tmp[2])
+            if 'M=' in block[i]:
+                
+                frag.append(block[i].strip('\n'))
+            if ('trajectory' in block[i]) & (len(frag) != 0):
+#                print('frag',frag)
+                self.frag.append(frag)
+                frag = []
+            if 'of QC calls' in block[i]:
+                self.frag.append(frag)
+                frag = []
 #                flag = not flag
             if ('E X I T' in block[i])|('EXIT' in block[i]):
                 self.exit.append(block[i])
@@ -112,9 +125,7 @@ class qceimsout():
                 self.numfrag.append(tmp2[6])
                 self.eTemp.append(tmp2[7])
                 self.fragT.append(tmp2[8:])
-            if 'M=' in block[i]:
-                
-                frag.append(block[i])
+            
 #                flag = not flag
 #        if not flag:
 #            self.re = block
@@ -129,7 +140,7 @@ class qceimsout():
         data = {'index1': self.trajectory1, 'index2': self.trajectory2, 
                                'reason': self.exit, 'time': self.time,
                                'step':self.step, 'Epot':self.Epot, 'Ekin':self.Ekin,
-                               'error':self.error, 'numfrag':self.numfrag, 'eTemp':self.eTemp, 'fragT':self.fragT}
+                               'error':self.error, 'numfrag':self.numfrag, 'eTemp':self.eTemp, 'fragT':self.fragT,'fragments':self.frag}
         
         self.pd = pd.DataFrame(data)
 #        print(self.pd)
@@ -142,8 +153,8 @@ class qceimsout():
 if not args.path:
     batch = False
     y = qceimsout(args.file)
-    print(len(y.trajectory1),len(y.trajectory2),len(y.exit),len(y.content))
-    
+    print(len(y.trajectory1),len(y.trajectory2),len(y.exit),len(y.content),len(y.frag))
+#    print(y.frag)
     y.excel(batch)
 elif not args.file:
     batch = True
