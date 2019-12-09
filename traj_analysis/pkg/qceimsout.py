@@ -4,15 +4,14 @@
 Created on Fri Dec  6 11:55:50 2019
 
 @author: shunyang
+anaylse qceims.out, give out running time, fragments, energy and some other informations
+two modes: -f , for single file and -b for all out file in the secondary folder
 """
 
 import pandas as pd
 import argparse
 import os 
-'''
-To use the code, change the path of qceims.out file, 
-the program will generate a qceims.csv file at the same path
-'''
+
 
 #file = '/Users/shunyang/project/qceims_input/184/qceims.out'
 
@@ -21,7 +20,8 @@ parser = argparse.ArgumentParser(prog='shunyang',
 parser.add_argument("-f",'--file',dest='file', action='store',
                     help='full path of the qceims.out file, example: path = \'/tmp/184/qceims.out\'')
 parser.add_argument("-b",'--batch',dest='path',action='store',
-                    help='path of folder which contains all result file, example: /tmp/184/qceims.out, than path = \'/tmp/\',')
+                    help='path of folder which contains all result file, example: \
+                    /tmp/184/qceims.out, than path = \'/tmp/\', careful about the structure!')
 args = parser.parse_args()
 
     
@@ -65,10 +65,13 @@ class qceimsout():
 #            self.batch(path)
 #        self.calls = []
     def file(self,path):
+        '''
+        iterator to generate a block including one TMP folder's qceims.out file
+        '''
         with open(path) as f:
             for block in self.readblocks(f):
                 self.block = block
-                self.process(block)
+                self.process(block)#read and record data
                 
                 
         f.close()
