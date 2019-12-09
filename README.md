@@ -7,4 +7,4 @@
    https://doi.org/10.1016/1044-0305(94)85022-4, Stein 1994
 3. plot functions (MSpec.py)
 
-
+4. qceims.out analysis is done by qceimsout.py, which has two modes: -f and -b 
