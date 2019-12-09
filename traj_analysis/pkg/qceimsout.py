@@ -8,22 +8,35 @@ Created on Fri Dec  6 11:55:50 2019
 
 import pandas as pd
 import argparse
-
+import os 
 '''
 To use the code, change the path of qceims.out file, 
 the program will generate a qceims.csv file at the same path
 '''
 
-file = '/Users/shunyang/project/qceims_input/184/qceims.out'
+#file = '/Users/shunyang/project/qceims_input/184/qceims.out'
 
 parser = argparse.ArgumentParser(prog='shunyang',
                                  description='Progdyn main program.')
 parser.add_argument("-f",'--file',dest='file', action='store',
-                    help='full path of the qceims.out file')
+                    help='full path of the qceims.out file, example: path = \'/tmp/184/qceims.out\'')
 parser.add_argument("-b",'--batch',dest='path',action='store',
-                    help='path of folder which contains all result file, example: /tmp/184/qceims.out, than path = /tmp/')
-args = parser.parse_args(['-f',file])
+                    help='path of folder which contains all result file, example: /tmp/184/qceims.out, than path = \'/tmp/\',')
+args = parser.parse_args()
 
+    
+#%%
+
+def batchmode(path,batch):
+    tmp = os.listdir(path)
+    print(tmp)
+    for i in tmp:
+        tmppath=path + '/'+ i+'/qceims.out'
+        print(tmppath)
+        y = qceimsout(tmppath)
+        ex = y.excel(batch)
+        ex.to_csv(path + i + '.csv')
+        
 class qceimsout():
     def __init__(self,path):
         '''
@@ -45,13 +58,19 @@ class qceimsout():
         self.eTemp = []
         self.fragT = []
         self.fraginfo = [] #only take the largest charge fragment
+        
+        self.file(path)
+#        else:
+#            self.batch(path)
 #        self.calls = []
+    def file(self,path):
         with open(path) as f:
             for block in self.readblocks(f):
                 self.block = block
                 self.process(block)
                 
         f.close()
+
             
     def readblocks(self, file):
         block = []
@@ -79,7 +98,11 @@ class qceimsout():
             if ('E X I T' in block[i])|('EXIT' in block[i]):
                 self.exit.append(block[i])
                 self.content.append(block[i-2])
-                tmp2 = block[i-2].split()
+                if 'EXIT' in block[i]:
+                    tmp2 = block[i-1].split()
+                else:
+                    tmp2 = block[i-2].split()
+#                print(tmp2)
                 self.time.append(tmp2[1])
                 self.step.append(tmp2[0])
                 self.Epot.append(tmp2[2])
@@ -102,23 +125,31 @@ class qceimsout():
 #                self.calls.append(re.findall(r'*[0-9]',block[i]))
                
                 
-    def excel(self):
+    def excel(self,batch):
         data = {'index1': self.trajectory1, 'index2': self.trajectory2, 
                                'reason': self.exit, 'time': self.time,
                                'step':self.step, 'Epot':self.Epot, 'Ekin':self.Ekin,
                                'error':self.error, 'numfrag':self.numfrag, 'eTemp':self.eTemp, 'fragT':self.fragT}
         
         self.pd = pd.DataFrame(data)
-        self.pd.to_csv(self.path.split('.')[0]+'.csv')
+#        print(self.pd)
+        if not batch:
+            self.pd.to_csv(self.path.split('.')[0]+'.csv')
         return self.pd
                     
-            
+#%%           
 
-
-y = qceimsout(args.file)
-print(len(y.trajectory1),len(y.trajectory2),len(y.exit),len(y.content))
-
-y.excel()
+if not args.path:
+    batch = False
+    y = qceimsout(args.file)
+    print(len(y.trajectory1),len(y.trajectory2),len(y.exit),len(y.content))
+    
+    y.excel(batch)
+elif not args.file:
+    batch = True
+    batchmode(args.path,batch)
+else:
+    parser.error('Where is qceims.out!')
 
 
 
