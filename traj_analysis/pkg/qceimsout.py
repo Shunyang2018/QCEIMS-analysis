@@ -41,6 +41,9 @@ def batchmode(path,batch):
         print('output file at: \n', tmppath)
 
 def count(coord):
+    '''
+    get the formula, could be wrong with Si!!!
+    '''
     mol = ''
     for i in set(re.findall('[A-Z]', coord)):  
         
@@ -48,6 +51,9 @@ def count(coord):
     return mol
 
 def frag2list(x):
+    '''
+    clean the fragments column
+    '''
     if type(x) != str:
         return ['','','','','','','','']
     else:
@@ -183,6 +189,9 @@ class qceimsout():
 
 
     def list2column(self, oldname):
+        '''
+        seperate list in the column and rename them
+        '''
         x = self.pd[oldname].apply(pd.Series)
         tmp = len(x.columns[:])
         name = []
