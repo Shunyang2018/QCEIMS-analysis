@@ -10,7 +10,7 @@ two modes: -f , for single file and -b for all out file in the secondary folder
 
 import pandas as pd
 import argparse
-import os 
+import os
 import re
 
 #file = '/Users/shunyang/project/qceims_input/184/qceims.out'
@@ -24,10 +24,13 @@ parser.add_argument("-b",'--batch',dest='path',action='store',
                     /tmp/184/qceims.out, than path = \'/tmp/\', careful about the structure!')
 args = parser.parse_args( )
 #['-f','/Users/shunyang/project/qceims_input/184/qceims.out']
-    
+
 #%%
 
 def batchmode(path,batch):
+    '''
+    read and write all qceims.out files in the directory.
+    '''
     tmp = os.listdir(path)
     print('input list',tmp)
     for i in tmp:
@@ -45,8 +48,8 @@ def count(coord):
     get the formula, could be wrong with Si!!!
     '''
     mol = ''
-    for i in set(re.findall('[A-Z]', coord)):  
-        
+    for i in set(re.findall('[A-Z]', coord)):
+
         mol += (i+str(coord.count(i)))
     return mol
 
@@ -59,7 +62,7 @@ def frag2list(x):
     else:
         x = x.replace('~','')
         x = x.replace('M=','')
-        return x.split()         
+        return x.split()
 #%%
 class qceimsout():
     def __init__(self,path):
@@ -84,9 +87,15 @@ class qceimsout():
         self.fraginfo = [] #only take the largest charge fragment
         self.frag = []
         self.start = []
+        self.walltime = []
         self.calls = []
+        self.ave_Ekin = []
+        self.ave_Epot = []
+        self.ave_Etot = []
+        self.ave_T = []
+        self.ave_lastT = []
         self.file(path)
-        
+
 #        else:
 #            self.batch(path)
 #        self.calls = []
@@ -104,11 +113,14 @@ class qceimsout():
 #                    print(block)
                     break
 #                break
-                
+
         f.close()
 
-            
+
     def readblocks(self, file):
+        '''
+        read each trajectory block
+        '''
         block = []
         flag = False
         for line in file:
@@ -123,6 +135,9 @@ class qceimsout():
 
 
     def process(self, block):
+        '''
+        input block and output data in each block
+        '''
         frag = []
         flagcoord = False
         coord = ''
@@ -132,25 +147,35 @@ class qceimsout():
             if (flagcoord == True) & (len(block[i].split()) != 0):
 #                print(block[i].split())
                 coord += block[i].split()[4]
-                
+
             elif (len(block[i].split())== 0) & (len(coord) != 0) :
                 self.start.append(count(coord))
                 coord = ''
                 flagcoord = False
             if 'initial Cartesian coordinates:' in block[i]:
                 flagcoord = True
-            
-            
-                
-             
+            if 'wall time (min)' in block[i]:
+                walltime = block[i].replace('wall time (min) ','').strip('\n')
+
+
+
             if 'trajectory' in block[i]:
                 tmp = block[i].split()
                 self.trajectory1.append(tmp[1])
                 self.trajectory2.append(tmp[2])
                 timer += 1
-                
+            if ' average Ekin' in block[i]:
+                self.ave_Ekin.append(block[i].split()[-1])
+            if ' average Epot' in block[i]:
+                self.ave_Epot.append(block[i].split()[-1])
+            if ' average Etot' in block[i]:
+                self.ave_Etot.append(block[i].split()[-1])
+            if ' average T ' in block[i]:
+                self.ave_T.append(block[i].split()[-1])
+            if ' average last T ' in block[i]:
+                self.ave_lastT.append(block[i].split()[-1])
             if 'M=' in block[i]:
-                
+
                 frag.append(block[i].strip('\n'))
             if ('trajectory' in block[i]) & (len(frag) != 0):
 #                print('frag',frag)
@@ -159,18 +184,19 @@ class qceimsout():
             if 'of QC calls' in block[i]:
                 calls = block[i].split()[-1]
                 self.frag.append(frag)
-              
-                
+
+
                 for j in range(timer-1):
-                    
+                    self.walltime.append(None)
                     self.calls.append(None)
                 self.calls.append(calls)
+                self.walltime.append(walltime)
                 frag = []
                 timer = 0 #don't know why we need!!! but with out this, the timer will be cumulated
 #                flag = not flag
             if ('E X I T' in block[i])|('EXIT' in block[i]):
-                self.exit.append(block[i].replace('E X I T   M D  because of ',''))
-                self.content.append(block[i-2])
+                self.exit.append(block[i].replace('E X I T   M D  because of ','').strip('\n'))
+                self.content.append(block[i-2].strip('\n'))
                 if 'EXIT' in block[i]:
                     tmp2 = block[i-1].split()
                 else:
@@ -185,7 +211,7 @@ class qceimsout():
                 self.numfrag.append(tmp2[6])
                 self.eTemp.append(tmp2[7])
                 self.fragT.append(tmp2[8:])
-            
+
 
 
     def list2column(self, oldname):
@@ -196,35 +222,42 @@ class qceimsout():
         tmp = len(x.columns[:])
         name = []
         if len(oldname) > 9:
-            x.rename(columns=dict(zip(x.columns[:],['mass', 'formula','index1','index2',
-                                      'q pop','spin', 'q IDB', 'diss time'])),inplace=True)
-            x = x.drop('index1',1)
-            x = x.drop('index2',1)
+            rename = lambda x: (oldname + x).replace('ments', '')
+            x.rename(columns=dict(zip(x.columns[:],map(rename,['mass', 'formula','index1','index2',
+                                      'q pop','spin', 'q IDB', 'diss time']))),inplace=True)
+            x = x.drop(rename('index1'),1)
+            x = x.drop(rename('index2'),1)
         else:
-                
+
             for i in range(tmp):
                 name.append(oldname+str(i+1))
             x.rename(columns=dict(zip(x.columns[:],name)),inplace=True)
-        
+
         self.pd = self.pd.drop(oldname , 1)
         self.pd = pd.concat([self.pd,x],axis=1)
-        return self.pd              
-              
+        return self.pd
+
     def excel(self,batch):
-        data = {'index1': self.trajectory1, 'index2': self.trajectory2, 
+        '''
+        generate pandas DataFrame and clean and save it.
+        '''
+        data = {'index1': self.trajectory1, 'index2': self.trajectory2,
                                'reason': self.exit, 'time': self.time,
                                'step':self.step, 'Epot':self.Epot, 'Ekin':self.Ekin,
-                               'error':self.error, 'numfrag':self.numfrag, 
+                               'ave_Etot':self.ave_Etot, 'ave_Ekin':self.ave_Ekin, 'ave_Epot':self.ave_Epot,
+                               'ave_T':self.ave_T, 'ave_lastT':self.ave_lastT,
+                               'error':self.error, 'numfrag':self.numfrag,
                                'eTemp':self.eTemp, 'fragT':self.fragT,'fragments':self.frag,'input':self.start,
-                               'qcCalls':self.calls}
-        
+                               'qcCalls':self.calls, 'wall time (min)':self.walltime}
+
         self.pd = pd.DataFrame(data)
         self.list2column('fragT')
         self.list2column('fragments')
-                
+        self.pd = self.pd.shift()[1:]
+        self.pd.index.name = '#'
         for col in self.pd.columns:
             if 'fragments' in col:
-             
+
                 xx = self.pd[col].map(frag2list)
                 self.pd = self.pd.drop(col , 1)
                 self.pd = pd.concat([self.pd, xx],axis=1)
@@ -235,9 +268,9 @@ class qceimsout():
             self.pd.to_csv(self.path.split('.')[0]+'.csv')
             print('output file at: \n', self.path.split('.')[0]+'.csv')
         return self.pd
-                   
-#%%           
-if (not args.path) & (not args.file):
+
+#%%main program
+if (not args.path) & (not args.file):# if input option wrong
     parser.error('Where is qceims.out!')
 if not args.path:
     batch = False
@@ -248,7 +281,7 @@ if not args.path:
     test = y.calls
 #    print(y.frag)
     y.excel(batch)
-    
+
 elif not args.file:
     batch = True
     print('start batch mode!')
@@ -256,13 +289,3 @@ elif not args.file:
 
 
 print('normal termination!')
-
-
-
-
-
-
-
-
-
-
