@@ -16,9 +16,11 @@ It is flexible with CPUs and can help you avoid queuing!
 To use this tool:
 
 1)copy the array.bash and bin file and the tmol file to your folder. 
+
 2)You need to change the settings in array.bash code, 
 	including the 
 	$workdir and $user
+	
 3)run 'bash array.bash [STUCTURE].tmol’
 
 4)after the jobs finished, you can find all the files including result.jdx 
