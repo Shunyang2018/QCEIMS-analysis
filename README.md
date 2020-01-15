@@ -9,7 +9,7 @@
 
 4. qceims.out analysis is done by qceimsout.py, which has two modes: -f and -b 
 
-#jobarray tool:
+## jobarray tool:
 
 I wrote this small tool to run array through slurm system.
 It is flexible with CPUs and can help you avoid queuing!
