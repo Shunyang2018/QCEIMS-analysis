@@ -9,6 +9,11 @@
 
 4. qceims.out analysis is done by qceimsout.py, which has two modes: -f and -b 
 
+5. some useful tools in experimental spectra search:
+
+https://chemdata.nist.gov/dokuwiki/doku.php?id=chemdata:nist17
+
+
 ## jobarray tool:
 
 I wrote this small tool to run array through slurm system.
