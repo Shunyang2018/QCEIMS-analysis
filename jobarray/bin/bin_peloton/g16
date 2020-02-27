@@ -1,0 +1,56 @@
+#!/bin/bash
+# author: Frederic
+# Sep 27 2019
+
+Jobname=$1
+if [ ! $Jobname ]; then
+        echo "Usage: rung09 input.com(input.gjf)"
+        exit
+else
+        echo Submitted Jobname = $1
+fi
+Procs=`head -8 $1 | grep nprocshared | sed 's/%nprocshared=//g' | sed 's/\r//g'`
+if [ ! $Procs ]; then
+        Procs=`head -8 $1 | grep NProcShared | sed 's/%NProcShared=//g' | sed 's/\r//g'`
+fi
+if [ ! $Procs ]; then
+        echo " "
+        echo "Wrong Input file format. "
+        echo " "
+        echo "You must use %NProcShared=Procs and %mem=Mem "
+        echo "in your Gaussian input file to submit Gaussian jobs!!!"
+        echo " "
+        exit
+else
+        if [ $Procs -le '16' ]; then
+                echo "The job will use $Procs threads."
+        else
+                echo " "
+                echo "Wrong Processor Number Requested!"
+                exit
+        fi
+fi
+
+JobSub=`echo $Jobname | sed 's/.com/.sh/g' | sed 's/.gjf/.sh/g'`
+echo " "
+#echo $Jobname
+#echo $Batchname
+#echo $JobSub
+
+cat<<EOF>$JobSub
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=$Procs
+#SBATCH --export=ALL
+#SBATCH -t 48:00:00
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=sywang@ucdavis.edu
+
+export my_file=$Jobname
+module load gaussian/16
+g16 $Jobname
+
+EOF
+
+sbatch $JobSub 
+rm $JobSub

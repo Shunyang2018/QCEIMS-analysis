@@ -4,7 +4,9 @@
 ###reference: https://stackoverflow.com/questions/52248393/having-a-job-depend-on-an-array-job-in-slurm
 
 #use this code by 'bash array.bash STUCTURE.tmol'
-file=$1
+bin=/share/fiehnlab/users/shunyang/qceims/array/bin
+file=${1##*/}
+structures=/share/fiehnlab/users/shunyang/qceims/array/structures/
 if [ ! $file ]; then
         echo "Usage: bash array.bash STUCTURE.tmol"
         exit
@@ -12,10 +14,9 @@ fi
 
 #########config part
 #put this file and bin folder and your structure *.tmol under workdir
-workdir=/share/fiehnlab/users/shunyang/qceims/array/
+workdir=/share/fiehnlab/users/shunyang/qceims/array/TMS/
 #the name used in /tmp/user/qme
 user=swang
-ntask=4
 #i didn't have a config about these: you can change it in the slurm file
 #task       ncpu    mem
 #folder     16      120G
@@ -28,30 +29,38 @@ echo workdir: $workdir
 echo user:$user
 path=`echo $file|sed 's/.tmol//g'`
 mkdir $path
-anumber=`grep -v '^\s*$' $file | wc -l`
+anumber=`grep -v '^\s*$' $1 | wc -l`
 #get number of trajectories by default setting, anumber*25
 trajnumber=$(($(($anumber-2))*25))
 
 echo 'array_number'
 echo $trajnumber
 #collect slurm files and structures
-cp ${workdir}bin/folder.slurm $workdir$path/folder.slurm
-cp ${workdir}bin/array.slurm $workdir$path/array.slurm
-cp ${workdir}bin/plot.slurm $workdir$path/plot.slurm
-cp $workdir$1 $workdir$path/structure.tmol
+cp ${bin}/folder.slurm $workdir$path/folder.slurm
+cp ${bin}/array.slurm $workdir$path/array.slurm
+cp ${bin}/plot.slurm $workdir$path/plot.slurm
+cp $structures$1 $workdir$path/structure.tmol
 #go to the subfolder
 cd $path
+
 echo 'workpath'
 pwd
-
-
+#--exclude=all rafter nodes
+#ex=rafter-[0,2,3,4,5,6,7,8,9,11,12,13,14,18,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48]
+ex=rafter-14
 echo 'sub job1'
-echo sbatch --job-name=$path --parsable folder.slurm $workdir $user
+if [ ! -e *.jdx ] && [ ! -d TMPQCEIMS ]
+then
+echo 'run from first setp'
 jid1=$(sbatch --job-name=$path --parsable folder.slurm $workdir $user)
 echo $jid1
 echo 'sub job2'
-jid2=$(sbatch  --dependency=afterany:$jid1 --job-name=$path --array=1-$trajnumber --parsable array.slurm $workdir $user)
+jid2=$(sbatch  --exclude=$ex --dependency=afterok:$jid1 --job-name=$path --array=1-$trajnumber --parsable array.slurm $workdir $user)
 echo $jid2
+else
+jid2=$(sbatch  --job-name=$path --array=1-$trajnumber --parsable array.slurm $workdir $user)
+echo $jid2
+fi
 echo 'sub job3'
-sbatch --dependency=singleton --job-name=$path plot.slurm $workdir $user
+sbatch --exclude=$ex --dependency=singleton --job-name=$path plot.slurm $workdir $user
 

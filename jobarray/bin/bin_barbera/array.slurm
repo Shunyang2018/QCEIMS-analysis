@@ -5,17 +5,33 @@
 #SBATCH --partition=production     # partition to submit to [production, intel]
 ### SBATCH --nodelist=             # calling a specific gaggle node on [intel]
 #SBATCH --job-name=om2-v12         # Job name
-### SBATCH --nodes=1              # single node, anything more than 1 will not run
-### SBATCH --exclusive             # mostly for use on intel partition
-#SBATCH --ntasks=4                 # equivalent to cpus, stick to around 20 max on gc64, or gc128 nodes
-#SBATCH --mem=4G                   # memory pool all cores, default is 2GB per cpu
-#SBATCH --time=0-00:20:00          # expected time of completion in hours, minutes, seconds, default 1-day
-### SBATCH --output=Array.%A_%a.out  # STDOUT
-### SBATCH --error=Array.%A_%a.error   # STDERR
-### SBATCH --mail-user=you@gmail.com
-
+# SBATCH --nodes=1              # single node, anything more than 1 will not run
+## SBATCH --exclude=gaggle-[1,2,3]           # mostly for use on intel partition
+#SBATCH --ntasks=8                 # equivalent to cpus, stick to around 20 max on gc64, or gc128 nodes
+#SBATCH --mem=20G                   # memory pool all cores, default is 2GB per cpu
+#SBATCH --time=0-24:20:00          # expected time of completion in hours, minutes, seconds, default 1-day
+# SBATCH --output=Array.%A_%a.out  # STDOUT
+# SBATCH --error=Array.%A_%a.error   # STDERR
+#SBATCH --mail-type=END,FAIL
+##SBATCH --mail-user=sywang@ucdavis.edu
+export OMP_NUM_THREADS=8,1
 workdir=$1
 user=$2
+if [ -z $user ]
+then
+user=swang
+echo "user" $user
+fi
+
+if [ -z $workdir ]
+then
+workdir="${pwd}"
+echo "default workdir" $workdir
+fi
+cd $workdir$SLURM_JOB_NAME/TMPQCEIMS/TMP.${SLURM_ARRAY_TASK_ID}
+if [ ! -e FINISHED ]
+then
+touch RUNNING
 # echo time and date
 echo "Job started at " `date`
 echo ''
@@ -35,27 +51,27 @@ echo ''
 
 
 # check if qceims is already installed on the node, if not install it
-if [ ! -f /tmp/$user/qms/qceims ]; then
+if [ ! -f /tmp/$user/qms$SLURM_JOB_NAME${SLURM_ARRAY_TASK_ID}/qceims ]; then
 
 	# create custom qceims for a specific user // folder name is hardcoded for each user
-	mkdir -p /tmp/$user/qms/
+	mkdir -p /tmp/$user/qms$SLURM_JOB_NAME${SLURM_ARRAY_TASK_ID}/
 
 	# copy qceims work files to /qms
-	cp -rT /share/fiehnlab/software/qceims4.0/ /tmp/$user/qms
+	cp -rT /share/fiehnlab/software/qceims4.0/ /tmp/$user/qms$SLURM_JOB_NAME${SLURM_ARRAY_TASK_ID}/
 
 
 	# change the executable mode
-	chmod +x /tmp/$user/qms/qceims
+	chmod +x /tmp/$user/qms$SLURM_JOB_NAME${SLURM_ARRAY_TASK_ID}/qceims
 
 fi
 
-cd /tmp/$user/qms
+cd /tmp/$user/qms$SLURM_JOB_NAME${SLURM_ARRAY_TASK_ID}/
 #set environment
 ls -la
 source /share/fiehnlab/software/qceims4.0/.envrc
 
 # make qceims, getres, plotms and mndo99 available
-	export PATH=$PATH:/tmp/$user/qms
+export PATH=$PATH:/tmp/$user/qms$SLURM_JOB_NAME${SLURM_ARRAY_TASK_ID}
 
 # make new unique dir including username and  job-name
 mkdir /tmp/$user/${SLURM_JOB_ID}/
@@ -71,16 +87,18 @@ qceims -prod > qceims.out 2>&1
 
 # wait
 wait
-
+rm RUNNING
+touch FINISHED
 # collect output back to share
 cp -r /tmp/$user/${SLURM_JOB_ID}/TMP.${SLURM_ARRAY_TASK_ID}/* $workdir$SLURM_JOB_NAME/TMPQCEIMS/TMP.${SLURM_ARRAY_TASK_ID}
 
 # remove the single directory
+rm -rf /tmp/$user/qms$SLURM_JOB_NAME${SLURM_ARRAY_TASK_ID}/
 rm -rf /tmp/$user/${SLURM_JOB_ID}/TMP.${SLURM_ARRAY_TASK_ID}/
-rm -rf /tmp/$user/qms
 # tell its finished
 # touch FINISHED
-
 # echo that job ended
 echo "Job ended at " `date`
-
+else
+echo "Job done before " `date`
+fi
