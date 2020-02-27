@@ -23,7 +23,7 @@ parser.add_argument("-b",'--batch',dest='path',action='store',
                     help='path of folder which contains all result file, example: \
                     /tmp/184/qceims.out, than path = \'/tmp/\', careful about the structure!')
 args = parser.parse_args( )
-#['-f','/Users/shunyang/project/qceims_input/184/qceims.out']
+#use this to test: ['-f','/Users/shunyang/project/qceims_input/184/qceims.out']
 
 #%%
 
@@ -40,7 +40,7 @@ def batchmode(path,batch):
         y = qceimsout(tmppath)
 
         ex = y.excel(batch)
-        ex.to_csv(path + i + '.csv')
+        ex.to_csv(path + i + 'out.csv')
         print('output file at: \n', tmppath)
 
 def count(coord):
@@ -94,6 +94,7 @@ class qceimsout():
         self.ave_Etot = []
         self.ave_T = []
         self.ave_lastT = []
+        self.inienergy = []
         self.file(path)
 
 #        else:
@@ -174,6 +175,8 @@ class qceimsout():
                 self.ave_T.append(block[i].split()[-1])
             if ' average last T ' in block[i]:
                 self.ave_lastT.append(block[i].split()[-1])
+            if 'energy =' in block[i]:
+                self.inienergy.append(block[i].split()[-1])
             if 'M=' in block[i]:
 
                 frag.append(block[i].strip('\n'))
@@ -242,31 +245,39 @@ class qceimsout():
         generate pandas DataFrame and clean and save it.
         '''
         data = {'index1': self.trajectory1, 'index2': self.trajectory2,
-                               'reason': self.exit, 'time': self.time,
+                               'reason': self.exit, 'time': self.time, 
                                'step':self.step, 'Epot':self.Epot, 'Ekin':self.Ekin,
                                'ave_Etot':self.ave_Etot, 'ave_Ekin':self.ave_Ekin, 'ave_Epot':self.ave_Epot,
                                'ave_T':self.ave_T, 'ave_lastT':self.ave_lastT,
                                'error':self.error, 'numfrag':self.numfrag,
                                'eTemp':self.eTemp, 'fragT':self.fragT,'fragments':self.frag,'input':self.start,
                                'qcCalls':self.calls, 'wall time (min)':self.walltime}
-
-        self.pd = pd.DataFrame(data)
-        self.list2column('fragT')
-        self.list2column('fragments')
-        self.pd = self.pd.shift()[1:]
-        self.pd.index.name = '#'
-        for col in self.pd.columns:
-            if 'fragments' in col:
-
-                xx = self.pd[col].map(frag2list)
-                self.pd = self.pd.drop(col , 1)
-                self.pd = pd.concat([self.pd, xx],axis=1)
-                self.list2column(col)
-#        print(self.pd)
-        if not batch:
-            print('%i trajectories have been analyzed'%len(self.trajectory1))
-            self.pd.to_csv(self.path.split('.')[0]+'.csv')
-            print('output file at: \n', self.path.split('.')[0]+'.csv')
+        #if array length different, delete inial energy 'inienergy':self.inienergy,
+        
+        try: 
+            self.pd = pd.DataFrame(data)
+            self.list2column('fragT')
+            self.list2column('fragments')
+            self.pd = self.pd.shift()[1:]
+            self.pd.index.name = '#'
+            self.test='NAN'
+            for col in self.pd.columns:
+                if 'fragments' in col:
+    
+                    xx = self.pd[col].map(frag2list)
+                    self.pd = self.pd.drop(col , 1)
+                    self.pd = pd.concat([self.pd, xx],axis=1)
+                    self.list2column(col)
+    #        print(self.pd)
+            if not batch:
+                print('%i trajectories have been analyzed'%len(self.trajectory1))
+                self.pd.to_csv(self.path.split('.')[0]+'out.csv')
+                print('output file at: \n', self.path.split('.')[0]+'out.csv')
+        except ValueError:
+            print('arrays must all be same length, no file generated, please check test parameter!')
+            self.pd='NAN'
+            self.test = data
+        
         return self.pd
 
 #%%main program
@@ -277,11 +288,11 @@ if not args.path:
     print('start to analyze: \n', args.file)
     y = qceimsout(args.file)
     print(len(y.trajectory1),len(y.numfrag),len(y.exit),len(y.content),len(y.calls),
-    len(y.time),len(y.step),len(y.Ekin),len(y.start),len(y.fragT))
-    test = y.calls
-#    print(y.frag)
+    len(y.time),len(y.step),len(y.Ekin),len(y.start),len(y.fragT),len(y.trajectory2),
+    len(y.ave_Ekin),len(y.walltime),len(y.frag),len(y.calls))
+    
     y.excel(batch)
-
+    test = y.test
 elif not args.file:
     batch = True
     print('start batch mode!')
