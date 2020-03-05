@@ -475,7 +475,7 @@
     write(*,*)'open file 11'
     open(unit=11, file='result.jdx', STATUS="REPLACE")
     write(*,*)'open file 111'
-    open(unit=111, file='accuatemass.jdx',STATUS="REPLACE")
+    open(unit=111, file='accuratemass.jdx',STATUS="REPLACE")
     ! TK minimum JCAMP-DX header
     write(11,"(A)")'##TITLE=Theoretical in-silico spectrum (QCEIMS)'
     write(11,"(A)")'##JCAMP-DX=4.24'
