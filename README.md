@@ -33,6 +33,7 @@ Under $workdir/[STUCTURE] folder.
 
 ## plotms-v8
 Using hash table to record the accurate mass value and calculate the mass spectrum.
+The [Isotopic Masses and Natural Abundances](https://www.chem.ualberta.ca/~massspec/atomic_mass_abund.pdf)
 #### To compile it:
 `ifort -c dictionary_m.f90`
 `ifort -c plotms-v8.f90`
