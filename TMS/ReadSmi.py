@@ -14,7 +14,7 @@ classify 1-TMS compounds by smiles, can be used through command line.
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdchem
 from rdkit.Chem.rdchem import Atom 
-
+import pandas as pd
 
 def getAtom(m,element):
     '''
@@ -113,10 +113,14 @@ def betacarbons(mol, betalist):
     for pair in betalist: # go through all carbons, regardless carbon classification
         
         if pair[1] != "Si":
+            if debug:
+                print(pair)
             index2 = pair[0]
             atom2 = mol.GetAtomWithIdx(index2) #beta atom
             
             if atom2.GetIsAromatic(): 
+                if debug:
+                    print('aromatic',pair)
                 isaromatic = True
             if Carbonyl(mol, index2):
                 iscarbonyl = True
@@ -133,8 +137,12 @@ parser.add_argument('-b',dest='batch', action='store',help='path of smiles code 
 parser.add_argument('-s',dest='smi', action='store',help='smiles string of given compounds, and will print classifications right way')
 parser.add_argument('-o',dest='output',action='store',help='only activated for batch mode, save a csv file of classifications')
 if debug:
-    args = parser.parse_args( ['-b','/Users/shunyang/project/TMS/Functional_group/structure.smi',
-                               '-s','CCCc1ccccc1O[Si](C)(C)C'
+    args = parser.parse_args( ['-b','/Users/shunyang/project/TMS/Functional_group/structure.smi'
+                               #'-s','COc1ccccc1CCC(=O)O[Si](C)(C)C	' # primary acid
+                               #'-s', 'Cn1c(cc2ccccc12)C(=O)O[Si](C)(C)C' #aromitic acid
+                               #'-s', 'C/C(=N/OC)/[C@H]1CC[C@H]2[C@@H]3CC[C@@H]4C[C@@H](CC[C@]4(C)[C@H]3CC[C@]12C)O[Si](C)(C)C' #secondary alcohol
+                               #'-s', 'CC1(CCCCC1)O[Si](C)(C)C' #ter alcohol
+                               #'-s','C/C(=N\O[Si](C)(C)C)/c1ccc(cc1)OC	'
                                ,'-o','/Users/shunyang/project/TMS/Functional_group/classifications.csv'])
 else:
     args = parser.parse_args( )
@@ -206,22 +214,39 @@ for smi in suppl:
             
     elif element == "O":
         iscarbonyl, isaromatic = betacarbons(mol, tmp2[2])
-        if iscarbonyl:
-            type_list.append('acid')
+        tmp3=False #flag be flase if there is no Carbon on beta position, meaning O=N bond or someother kind.
+        for xy in tmp2[2]: # all atom in beta position
+            if xy[1] == "C": #to get  gamma carbon
+                index2 = int(xy[0])
+                tmp3 = getAtom(mol,index2)
+        if tmp3:
+            if iscarbonyl:
+                type_list.append('acid')
+                
+                isaromatic2 = betacarbons(mol, tmp3[2])[1]
+                if isaromatic2:
+                    subtype_list.append("aromatic")
+                else:
+                    subtype_list.append("primary")
+            else:
+                type_list.append('alcohol')
+                if isaromatic:
+                    subtype_list.append("aromatic")
+                else:
+                    if atom.GetIsAromatic():
+                        subtype_list.append("in aromatic ring")
+                    elif len(tmp3[2]) == 2:
+                        subtype_list.append("primary")
+                    elif len(tmp3[2]) == 3:
+                        subtype_list.append("secondary")
+                    elif len(tmp3[2]) == 4:
+                        subtype_list.append("tertiary")
+            
         else:
             type_list.append('alcohol')
-        if isaromatic:
-            subtype_list.append("aromatic")
-        else:
-            if atom.GetIsAromatic():
-                subtype_list.append("in aromatic ring")
-            elif len(tmp2[2]) == 2:
-                subtype_list.append("primary")
-            elif len(tmp2[2]) == 3:
-                subtype_list.append("secondary")
-            elif len(tmp2[2]) == 4:
-                subtype_list.append("tertiary")
-                
+            subtype_list.append(tmp2[2])
+    if debug:
+        df = pd.DataFrame({ 'superclass': type_list, 'subclass' : subtype_list}) 
                 
                 # for pair in tmp2[2]: #connected to alpha position atom; beta position
                 #     if pair[1] != "Si":
@@ -246,7 +271,7 @@ for smi in suppl:
 #%%output part
         
         
-import pandas as pd
+
 
 df = pd.DataFrame({'smi': suppl, 'superclass': type_list, 'subclass' : subtype_list}) 
 if args.batch:
