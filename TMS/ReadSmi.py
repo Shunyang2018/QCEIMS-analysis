@@ -126,7 +126,7 @@ def betacarbons(mol, betalist):
     
  #%%  parser part                
 import argparse
-debug=True
+debug=False
 parser = argparse.ArgumentParser(prog='classification',
                                  description='classify 1-TMS compounds (must contains 1 TMS group), supporting alcohol, carboxylic acids, amines, amides, thiols now')
 parser.add_argument('-b',dest='batch', action='store',help='path of smiles code conlumn, for example structure.smi')
