@@ -70,14 +70,17 @@ def Carbonyl(m,element):
         return False
     else:
         tmp = getAtom(m,element)[2]
+        # if len(tmp) > 2:
+        #     print(tmp)
         for pair in tmp: #connected to alpha position atom 
+            
             if pair[1] == "O":
                 
                 index2 = pair[0]
                 
                 bondtype = m.GetBondBetweenAtoms(element,index2).GetBondType()
-                if bondtype == rdchem.BondType.SINGLE:
-                    return True #once find C=O return
+                if bondtype == rdchem.BondType.DOUBLE:
+                        return True #once find C=O return
         return False #no O atom at all
 
 #test
@@ -123,7 +126,7 @@ def betacarbons(mol, betalist):
     
  #%%  parser part                
 import argparse
-debug=False
+debug=True
 parser = argparse.ArgumentParser(prog='classification',
                                  description='classify 1-TMS compounds (must contains 1 TMS group), supporting alcohol, carboxylic acids, amines, amides, thiols now')
 parser.add_argument('-b',dest='batch', action='store',help='path of smiles code conlumn, for example structure.smi')
@@ -131,7 +134,7 @@ parser.add_argument('-s',dest='smi', action='store',help='smiles string of given
 parser.add_argument('-o',dest='output',action='store',help='only activated for batch mode, save a csv file of classifications')
 if debug:
     args = parser.parse_args( ['-b','/Users/shunyang/project/TMS/Functional_group/structure.smi',
-                               '-s','CC(C)CC(C(=O)O[Si](C)(C)C)N'
+                               '-s','CCCc1ccccc1O[Si](C)(C)C'
                                ,'-o','/Users/shunyang/project/TMS/Functional_group/classifications.csv'])
 else:
     args = parser.parse_args( )
@@ -183,7 +186,7 @@ for smi in suppl:
                 subtype_list.append("secondary")
             else:
                 subtype_list.append("unknown")
-                print('un',tmp2)
+                print('unknown type',tmp2)
 
         
     elif element == "S":
