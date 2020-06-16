@@ -137,13 +137,14 @@ parser.add_argument('-b',dest='batch', action='store',help='path of smiles code 
 parser.add_argument('-s',dest='smi', action='store',help='smiles string of given compounds, and will print classifications right way')
 parser.add_argument('-o',dest='output',action='store',help='only activated for batch mode, save a csv file of classifications')
 if debug:
-    args = parser.parse_args( ['-b','/Users/shunyang/project/TMS/Functional_group/structure.smi'
+    args = parser.parse_args( [#'-b','/Users/shunyang/project/TMS/Functional_group/structure.smi'
+                               '-b','/Users/shunyang/project/TMS/Functional_group/TMS.smi'
                                #'-s','COc1ccccc1CCC(=O)O[Si](C)(C)C	' # primary acid
                                #'-s', 'Cn1c(cc2ccccc12)C(=O)O[Si](C)(C)C' #aromitic acid
                                #'-s', 'C/C(=N/OC)/[C@H]1CC[C@H]2[C@@H]3CC[C@@H]4C[C@@H](CC[C@]4(C)[C@H]3CC[C@]12C)O[Si](C)(C)C' #secondary alcohol
                                #'-s', 'CC1(CCCCC1)O[Si](C)(C)C' #ter alcohol
                                #'-s','C/C(=N\O[Si](C)(C)C)/c1ccc(cc1)OC	'
-                               ,'-o','/Users/shunyang/project/TMS/Functional_group/classifications.csv'])
+                               ,'-o','/Users/shunyang/project/TMS/Functional_group/test.csv'])
 else:
     args = parser.parse_args( )
 print('program starting')
@@ -235,18 +236,22 @@ for smi in suppl:
                 else:
                     if atom.GetIsAromatic():
                         subtype_list.append("in aromatic ring")
+                    
                     elif len(tmp3[2]) == 2:
                         subtype_list.append("primary")
                     elif len(tmp3[2]) == 3:
                         subtype_list.append("secondary")
                     elif len(tmp3[2]) == 4:
                         subtype_list.append("tertiary")
+                    else:
+                        subtype_list.append(tmp3[2])
             
         else:
             type_list.append('alcohol')
+            
             subtype_list.append(tmp2[2])
     if debug:
-        df = pd.DataFrame({ 'superclass': type_list, 'subclass' : subtype_list}) 
+        dftest = pd.DataFrame({ 'superclass': type_list, 'subclass' : subtype_list}) 
                 
                 # for pair in tmp2[2]: #connected to alpha position atom; beta position
                 #     if pair[1] != "Si":
