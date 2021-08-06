@@ -31,15 +31,4 @@ To use this tool:
 4)after the jobs finished, you can find all the files including result.jdx 
 Under $workdir/[STUCTURE] folder.
 
-## plotms-v8
-Using hash table to record the accurate mass value and calculate the mass spectrum.
-The [Isotopic Masses and Natural Abundances](https://www.chem.ualberta.ca/~massspec/atomic_mass_abund.pdf)
-#### To compile it:
-`ifort -c dictionary_m.f90`
-`ifort -c plotms-v8.f90`
-`ifort plotms-v8.o dictionary_m.o -o plotmsv8`
-#### Attention:
-The peaks are not normlized.
-#### To use it:
-Put the `qceims.res` file and `plotmsv8` program at the same folder, run the program. 
-You will get integer MS in `result.jdx` and accurate MS in `accuratemass.jdx`
+
