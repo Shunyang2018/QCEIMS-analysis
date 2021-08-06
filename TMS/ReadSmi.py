@@ -65,13 +65,14 @@ def Carbonyl(m,element):
 
     ''' 
     Hybrid = mol.GetAtomWithIdx(element).GetHybridization()
+    if debug:
+        print('hybird',Hybrid)
     if Hybrid != rdchem.HybridizationType.SP2:
         
         return False
     else:
         tmp = getAtom(m,element)[2]
-        # if len(tmp) > 2:
-        #     print(tmp)
+        
         for pair in tmp: #connected to alpha position atom 
             
             if pair[1] == "O":
@@ -79,6 +80,8 @@ def Carbonyl(m,element):
                 index2 = pair[0]
                 
                 bondtype = m.GetBondBetweenAtoms(element,index2).GetBondType()
+                if debug:
+                    print('bondtype',bondtype)
                 if bondtype == rdchem.BondType.DOUBLE:
                         return True #once find C=O return
         return False #no O atom at all
@@ -124,13 +127,15 @@ def betacarbons(mol, betalist):
                 isaromatic = True
             if Carbonyl(mol, index2):
                 iscarbonyl = True
+            if debug:
+                print('carbonyl, aromatic',iscarbonyl, isaromatic)
     return iscarbonyl, isaromatic
         
 
     
  #%%  parser part                
 import argparse
-debug=False
+debug=True
 parser = argparse.ArgumentParser(prog='classification',
                                  description='classify 1-TMS compounds (must contains 1 TMS group), supporting alcohol, carboxylic acids, amines, amides, thiols now')
 parser.add_argument('-b',dest='batch', action='store',help='path of smiles code conlumn, for example structure.smi')
@@ -138,11 +143,12 @@ parser.add_argument('-s',dest='smi', action='store',help='smiles string of given
 parser.add_argument('-o',dest='output',action='store',help='only activated for batch mode, save a csv file of classifications')
 if debug:
     args = parser.parse_args( [#'-b','/Users/shunyang/project/TMS/Functional_group/structure.smi'
-                               '-b','/Users/shunyang/project/TMS/Functional_group/TMS.smi'
+                               #'-b','/Users/shunyang/project/TMS/Functional_group/TMS.smi'
                                #'-s','COc1ccccc1CCC(=O)O[Si](C)(C)C	' # primary acid
                                #'-s', 'Cn1c(cc2ccccc12)C(=O)O[Si](C)(C)C' #aromitic acid
                                #'-s', 'C/C(=N/OC)/[C@H]1CC[C@H]2[C@@H]3CC[C@@H]4C[C@@H](CC[C@]4(C)[C@H]3CC[C@]12C)O[Si](C)(C)C' #secondary alcohol
                                #'-s', 'CC1(CCCCC1)O[Si](C)(C)C' #ter alcohol
+                               '-s', 'C[Si](C)(C)N1CC1' #ter alcohol
                                #'-s','C/C(=N\O[Si](C)(C)C)/c1ccc(cc1)OC	'
                                ,'-o','/Users/shunyang/project/TMS/Functional_group/test.csv'])
 else:
@@ -172,7 +178,8 @@ for smi in suppl:
             atom = xy[1]
             index = int(xy[0])
     tmp2 = getAtom(mol,index) # beta position
-    
+    if  debug:
+        print('tmp2',tmp2)
     Si_list.append(tmp)
     # type_list.append(atom)
     atom = mol.GetAtomWithIdx(index)

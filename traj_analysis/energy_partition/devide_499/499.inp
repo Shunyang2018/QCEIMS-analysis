@@ -1,0 +1,20 @@
+Input Section (Regular Method)
+__________________________________________
+traj_filename         /Users/shunyang/project/TMS/Code/traj_analysis/energy_partition/devide_499/trj.499.1
+timestep_traj         1
+start_time            1
+timestep_analyze      1
+title                 MeCybutOClEtSTcalc42degtraj1
+chkpoint              ./
+method                pbe1pbe/SVP
+fragment_num          2
+fragments             1,2,3,4,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,29,30,31,32,33,34 5,26,27,28
+potential_filename    No Data
+potential_standard    No Data
+
+
+Input Section (Normal Mode calculation)
+___________________________________________
+sort                  NO
+standardfilename      /Users/shunyang/project/TMS/Code/traj_analysis/energy_partition/trj271/trj499full_hp.log
+      trajprint             YES

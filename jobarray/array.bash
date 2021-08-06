@@ -48,6 +48,8 @@ pwd
 echo 'sub job1'
 echo sbatch --job-name=$path --parsable folder.slurm $workdir $user
 jid1=$(sbatch --job-name=$path --parsable folder.slurm $workdir $user)
+#use this one with conformer sampling 
+#sbatch --job-name=$path --parsable conformer.slurm $workdir $user
 echo $jid1
 echo 'sub job2'
 jid2=$(sbatch  --dependency=afterany:$jid1 --job-name=$path --array=1-$trajnumber --parsable array.slurm $workdir $user)
